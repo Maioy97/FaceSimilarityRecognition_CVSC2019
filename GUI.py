@@ -88,9 +88,10 @@ class GUI:
 
     Person_id = 3
     List = 'found'
-    addpersonURL =  'http://localhost:8000/Addperson/'
-    addphotoURL = 'http://localhost:8000/addPhoto/'
-    get_similar_peopleURL = 'http://localhost:8000/get_similar_people/'
+    addpersonURL =  'http://156.204.126.104:8000/Addperson/'
+    addphotoURL = 'http://156.204.126.104:8000/addPhoto/'
+    get_similar_peopleURL = 'http://156.204.126.104:8000/get_similar_people/'
+    get_infoURL = 'http://156.204.126.104:8000/get_info/'
 
     #addPhotoURL =  + str(Person_id) + '/' + List
     get_similar_peopleURL = 'http://localhost:8000/get_similar_people/' + str(Person_id) + '/' + List
@@ -98,6 +99,31 @@ class GUI:
     def __init__(self):
         self.setup()
         self.show()
+
+    def fillUI(self, lost_one_data):
+        current_date = date.today()
+        d1 = current_date.strftime("%d/%m/%Y")
+        year = d1.split("/")
+        year = int(year[-1])
+        birth_year = int(lost_one_data["birth_year"])
+
+        self.res_name.set(lost_one_data["name"])
+        self.res_age.set(year - birth_year)
+        self.res_place.set(lost_one_data["found_lost_place"])
+        self.res_phone.set(lost_one_data["contact_number"])
+        self.res_gender.set(lost_one_data["gender"])
+        self.res_note.set(lost_one_data["notes"])
+        imgS_str = lost_one_data["image"]
+        image_ext = lost_one_data["image_ext"]
+        fh = open("temp." + image_ext, "wb")
+        fh.write(base64.b64decode(imgS_str))
+        fh.close()
+        opened = Image.open("temp."+image_ext)
+        render = ImageTk.PhotoImage(opened.resize((self.size, self.size)))
+        if render is not None:
+            self.image_result.configure(image=render)
+            self.image_result.image = render
+            return
 
     def bttn_choose_image_onclick(self, a):
         currdir = os.getcwd()
@@ -108,52 +134,73 @@ class GUI:
             opened = Image.open(self.current_image)
             render = ImageTk.PhotoImage(opened.resize((self.size, self.size)))
             if render is not None:
-                self.image_static.configure(image = render)
+                self.image_static.configure(image=render)
                 self.image_static.image = render
                 return
             else:
                 msg = tk.messagebox.showinfo("invalid image path")
 
     def bttn_next_onclick(self, a):
-        current_res = self.res_list[self.res_index]
-        temp = Person()
+        if self.res_index >0:
+            newURL = self.get_infoURL + self.res_list[self.res_index]
+            info = requests.post(newURL)
+            self.res_index = self.res_index + 1
+            self.fillUI(info)
+        else:
+            msg = tk.messagebox.showinfo("no Next found" ,"please use Match first")
 
-        print("warning: next no click not done yet")
-        # retrieve res with given id from database
-        # this syntax should be changed to match
-        self.res_phone.set(temp.phone)
-        self.res_age.set(temp.age)
-        self. res_gender.set(temp.gender)
-        self. res_name.set(temp.name)
 
     def bttn_start_onclick(self, a):
-
         lost_one_data = {}
-        AddpersonURL =self.addpersonURL + self.person_radio_lost.get()
+        AddpersonURL = self.addpersonURL + self.person_radio_lost.get()
 
         current_date = date.today()
         d1 = current_date.strftime("%d/%m/%Y")
         year = d1.split("/")
         year = int(year[-1])
         birth_year = year - int(self.person_age.get())
-
+        if self.current_image is None:
+            msg = tk.messagebox.showinfo("data not ready","please select a photo first")
+            return
+        Person_id = None
         img_str = None
+
         with open(self.current_image, "rb") as imageFile:
             img_str = base64.b64encode(imageFile.read())
+        split = self.current_image.split('.')
 
-        lost_one_data["name"] = self.person_name.get()
-        lost_one_data["birth_year"] = birth_year
-        lost_one_data["lost_found_date"] = current_date
-        lost_one_data["sketch"] = self.sketch.get()
-        lost_one_data["found_lost_place"] = self.person_place.get()
-        lost_one_data["contact_number"] = self.person_phone.get()
-        lost_one_data["gender"] = self.person_radio_gender.get()
-        lost_one_data["notes"] = self.person_note.get()
-        lost_one_data["image"] = img_str
+        if self.person_place is not None:
+            lost_one_data["name"] = self.person_name.get()
+            lost_one_data["birth_year"] = birth_year
+            lost_one_data["lost_found_date"] = current_date
+            lost_one_data["sketch"] = self.sketch.get()
+            lost_one_data["found_lost_place"] = self.person_place.get()
+            lost_one_data["contact_number"] = self.person_phone.get()
+            lost_one_data["gender"] = self.person_radio_gender.get()
+            lost_one_data["notes"] = self.person_note.get()
+            lost_one_data["image"] = img_str
+            lost_one_data["image_ext"] = split[-1]
 
-        requests.post(AddpersonURL, data=lost_one_data)
+            Person_id = requests.post(AddpersonURL, data=lost_one_data).text
+            msg = tk.messagebox.showinfo("id recived",
+                                         "your id is : " + id+
+                                         "\nplease insert it in case you want to add more images of the same person and retry the search")
 
+        else:
+            Person_id = self.person_name.get()
+            newURL = self.addphotoURL + Person_id + '/' + self.person_radio_lost.get()
+            lost_one_data["image"] = img_str
+            lost_one_data["image_ext"] = split[-1]
+            self.res_list = requests.post(newURL, lost_one_data)
 
+        newURL = self.get_similar_peopleURL + Person_id + '/'
+        self.res_list = requests.post(newURL)
+        # call the function that returns json using res_list[0]
+
+        newURL = self.get_infoURL + self.res_list[0]
+        info = requests.post(newURL)
+        self.res_index = 1
+        self.fillUI(info)
 
     def setup(self):
         darkblue = "#a0c2ff"
@@ -171,7 +218,7 @@ class GUI:
         self.image_static.image = render
         self.image_static.place(x=self.x_left_col, y=self.y_row0)
 
-        self.bttn_chooseimage = tk.Button(self.window, text="Browse",bg=darkblue)
+        self.bttn_chooseimage = tk.Button(self.window, text="Browse", bg=darkblue)
         self.bttn_chooseimage.place(x=midcol, y=self.y_row0)
         # supossed to browse and change the image displayed
         self.bttn_chooseimage.bind("<Button-1>", self.bttn_choose_image_onclick)
@@ -215,9 +262,6 @@ class GUI:
         self.radio_female = tk.Radiobutton(self.window, text="Female", variable=self.person_radio_gender, value="F")
         self.radio_female.place(x=self.x_left_col + 50, y=self.y_row3 + 25)
 
-
-
-
         lbl_notes = tk.Label(self.window, text="Notes")
         lbl_notes.place(x=self.x_left_col + space, y=self.y_row3)
         self.txtbx_note = tk.Entry(self.window, textvariable=self.person_note)
@@ -257,17 +301,15 @@ class GUI:
 
         lbl_res_place = tk.Label(self.window, text="Place")
         lbl_res_place.place(x=self.x_right_col, y=self.y_row3)
-        self.lbl_val_place = tk.Label(self.window, textvariable=self.person_place)
+        self.lbl_val_place = tk.Label(self.window, textvariable=self.res_place)
         self.lbl_val_place.place(x=self.x_right_col, y=self.y_row3 + 25)
 
         lbl_res_notes = tk.Label(self.window, text="Notes")
         lbl_res_notes.place(x=self.x_right_col + space, y=self.y_row3)
-        self.lbl_val_note = tk.Label(self.window, textvariable=self.person_note)
+        self.lbl_val_note = tk.Label(self.window, textvariable=self.res_note)
         self.lbl_val_note.place(x=self.x_right_col + space, y=self.y_row3 + 25)
 
         self.res_phone.set("055484654654")
-
-
         # lower part ----------------------------
 
         bttn_next = tk.Button(self.window, text="Next",bg=darkblue)
