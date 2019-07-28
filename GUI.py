@@ -2,7 +2,9 @@ import tkinter as tk
 import tkinter.messagebox, tkinter.filedialog
 from datetime import date
 from PIL import Image, ImageTk
+import requests
 import os
+import base64
 
 
 class Person:
@@ -68,8 +70,7 @@ class GUI:
     person_radio_gender = tk.StringVar()
     person_note = tk.StringVar()
     person_place = tk.StringVar()
-    person_radio_lost = tk.IntVar()
-
+    person_radio_lost = tk.StringVar()
 
     sketch = tk.IntVar()
     x_left_col = 25
@@ -83,6 +84,16 @@ class GUI:
     xspace = 150
     bttn_size = 50
     bgcolor = "white"
+    current_image= None
+
+    Person_id = 3
+    List = 'found'
+    addpersonURL =  'http://localhost:8000/Addperson/'
+    addphotoURL = 'http://localhost:8000/addPhoto/'
+    get_similar_peopleURL = 'http://localhost:8000/get_similar_people/'
+
+    #addPhotoURL =  + str(Person_id) + '/' + List
+    get_similar_peopleURL = 'http://localhost:8000/get_similar_people/' + str(Person_id) + '/' + List
 
     def __init__(self):
         self.setup()
@@ -91,8 +102,10 @@ class GUI:
     def bttn_choose_image_onclick(self, a):
         currdir = os.getcwd()
         tempdir = tk.filedialog.askopenfile(parent=self.window, initialdir=currdir, title='Please select a directory')
-        if len(tempdir.name) > 0:
-            opened = Image.open(tempdir.name)
+        self.current_image = tempdir.name
+
+        if len(self.current_image) > 0:
+            opened = Image.open(self.current_image)
             render = ImageTk.PhotoImage(opened.resize((self.size, self.size)))
             if render is not None:
                 self.image_static.configure(image = render)
@@ -114,13 +127,19 @@ class GUI:
         self. res_name.set(temp.name)
 
     def bttn_start_onclick(self, a):
-        # check which classes and features are selected
+
         lost_one_data = {}
+        AddpersonURL =self.addpersonURL + self.person_radio_lost.get()
+
         current_date = date.today()
         d1 = current_date.strftime("%d/%m/%Y")
         year = d1.split("/")
         year = int(year[-1])
         birth_year = year - int(self.person_age.get())
+
+        img_str = None
+        with open(self.current_image, "rb") as imageFile:
+            img_str = base64.b64encode(imageFile.read())
 
         lost_one_data["name"] = self.person_name.get()
         lost_one_data["birth_year"] = birth_year
@@ -130,7 +149,10 @@ class GUI:
         lost_one_data["contact_number"] = self.person_phone.get()
         lost_one_data["gender"] = self.person_radio_gender.get()
         lost_one_data["notes"] = self.person_note.get()
-        
+        lost_one_data["image"] = img_str
+
+        requests.post(AddpersonURL, data=lost_one_data)
+
 
 
     def setup(self):
@@ -156,9 +178,9 @@ class GUI:
 
         lbl_lostfound = tk.Label(self.window, text="Person is:")
         lbl_lostfound.place(x=midcol, y=self.y_row0+50)
-        self.radio_lost = tk.Radiobutton(self.window, text="Lost", variable=self.person_radio_lost, value=0)
+        self.radio_lost = tk.Radiobutton(self.window, text="Lost", variable=self.person_radio_lost, value='lost')
         self.radio_lost.place(x=midcol, y=self.y_row0+75)
-        self.radio_found = tk.Radiobutton(self.window, text="Found", variable=self.person_radio_lost, value=1)
+        self.radio_found = tk.Radiobutton(self.window, text="Found", variable=self.person_radio_lost, value='found')
         self.radio_found.place(x=midcol, y=self.y_row0+100)
 
 
