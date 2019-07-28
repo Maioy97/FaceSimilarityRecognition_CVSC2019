@@ -1,7 +1,6 @@
 import tkinter as tk
-import tkinter.messagebox , tkinter.filedialog
-import matplotlib.pyplot as plt
-import numpy as np
+import tkinter.messagebox, tkinter.filedialog
+from datetime import date
 from PIL import Image, ImageTk
 import os
 
@@ -59,8 +58,6 @@ class GUI:
     res_gender = tk.StringVar()
     res_note = tk.StringVar()
     res_place = tk.StringVar()
-    res_radio_lost = tk.IntVar()
-    res_radio_gender = tk.StringVar()
 
     res_list = None
     res_index = 0
@@ -68,7 +65,12 @@ class GUI:
     person_name = tk.StringVar()
     person_age = tk.IntVar()
     person_phone = tk.StringVar()
-    person_gender = tk.StringVar()
+    person_radio_gender = tk.StringVar()
+    person_note = tk.StringVar()
+    person_place = tk.StringVar()
+    person_radio_lost = tk.IntVar()
+
+
     sketch = tk.IntVar()
     x_left_col = 25
     x_right_col = 560
@@ -113,94 +115,52 @@ class GUI:
 
     def bttn_start_onclick(self, a):
         # check which classes and features are selected
-        shapes_list = []
-        l_numOfEpochs = int(self.numOfEpochs.get())
-        l_bias = int(self.bias.get())
-        l_rate = float(self.rate.get())
-        l_shapes_string = self.layershapes.get()
-        l_shapes_string = l_shapes_string.split(',')
-        l_functionnum = self.functionNum.get()
-        l_numoflayers = self.numOfLayers.get()
-        if l_numoflayers == len(l_shapes_string):
-            if l_numOfEpochs > 0:
-                for shape in l_shapes_string:
-                    r = int(shape)
-                    shapes_list.append(r)
+        lost_one_data = {}
+        current_date = date.today()
+        d1 = current_date.strftime("%d/%m/%Y")
+        year = d1.split("/")
+        year = int(year[-1])
+        birth_year = year - int(self.person_age.get())
 
-                self.module = classification.BackPropagation(l_numoflayers, shapes_list, l_bias)
-                # call read data with said classes and features
-                x1features, x2features, x3features, x4features, labels = self.read_data()
+        lost_one_data["name"] = self.person_name.get()
+        lost_one_data["birth_year"] = birth_year
+        lost_one_data["lost_found_date"] = current_date
+        lost_one_data["sketch"] = self.sketch.get()
+        lost_one_data["found_lost_place"] = self.person_place.get()
+        lost_one_data["contact_number"] = self.person_phone.get()
+        lost_one_data["gender"] = self.person_radio_gender.get()
+        lost_one_data["notes"] = self.person_note.get()
+        
 
-                # organise data : divide it into train and test data
-                x1features = np.array(x1features)
-                tr_x1, ts_1 = x1features[0:30], x1features[30:50]
-                tr_x1, ts_1 = np.append(tr_x1, x1features[50:80]), np.append(ts_1, x1features[80:100])
-                tr_x1, ts_1 = np.append(tr_x1, x1features[100:130]), np.append(ts_1, x1features[130:150])
-
-                x2features = np.array(x2features)
-                tr_x2, ts_2 = x2features[0:30], x2features[30:50]
-                tr_x2, ts_2 = np.append(tr_x2, x2features[50:80]), np.append(ts_2, x2features[80:100])
-                tr_x2, ts_2 = np.append(tr_x2, x1features[100:130]), np.append(ts_2, x2features[130:150])
-
-                x3features = np.array(x3features)
-                tr_x3, ts_3 = x3features[0:30], x3features[30:50]
-                tr_x3, ts_3 = np.append(tr_x3, x3features[50:80]), np.append(ts_3, x3features[80:100])
-                tr_x3, ts_3 = np.append(tr_x3, x3features[100:130]), np.append(ts_3, x3features[130:150])
-
-                x4features = np.array(x4features)
-                tr_x4, ts_4 = x4features[0:30], x4features[30:50]
-                tr_x4, ts_4 = np.append(tr_x4, x4features[50:80]), np.append(ts_4, x4features[80:100])
-                tr_x4, ts_4 = np.append(tr_x4, x4features[100:130]), np.append(ts_4, x4features[130:150])
-
-                labels = np.array(labels)
-                train_labels = labels[0:30, :], labels[50:80, :], labels[130:150, :]
-                train_labels, test_labels = labels[0:30, :], labels[30:50, :]
-                train_labels, test_labels = np.append(train_labels, labels[50:80, :], axis=0),\
-                                            np.append(test_labels, labels[80:100, :], axis=0)
-                train_labels, test_labels = np.append(train_labels, labels[100:130, :], axis=0),\
-                                            np.append(test_labels, labels[130:150, :], axis=0)
-
-                # -------------------------
-                self.module.train(train_labels, l_numOfEpochs, tr_x1, tr_x2, tr_x3, tr_x4, l_rate, l_functionnum)
-                # call test and output the percentage
-                confusion_mat, error = self.module.test(test_labels, ts_1, ts_2, ts_3, ts_4)
-                # show accuracy
-                accuracy = (1 - error)*100
-                msg_str = 'model is ,', accuracy, ' % accurate'
-                msg = tk.messagebox.showinfo("model accuracy", msg_str)
-                print(confusion_mat)
-            else:
-                stri = "number of epochs can't be 0"
-                msg = tk.messagebox.showinfo("layer specifics", stri)
-        else:
-            strx = "number of layer and layer neurons per layer don't match , please fix it and try again"
-            msg = tk.messagebox.showinfo("layer specifics", strx)
 
     def setup(self):
+        darkblue = "#a0c2ff"
         self.window.configure(background=self.bgcolor)
-        btnsize= self.bttn_size
+        self.window.tk_setPalette(background='white', foreground='black',
+                           activeBackground='grey', activeForeground='black')
+        btnsize = self.bttn_size
         space = self.xspace
         self.window.geometry("900x550")
         midcol = x=self.x_left_col + self.size +25
 
-        load = Image.open("34AD2.jpg").resize((256, 256))
+        load = Image.open("logo.png").resize((256, 256))
         render = ImageTk.PhotoImage(load)
         self.image_static = tk.Label(self.window, image=render)
         self.image_static.image = render
         self.image_static.place(x=self.x_left_col, y=self.y_row0)
 
-        self.bttn_chooseimage = tk.Button(self.window, text="Browse")
+        self.bttn_chooseimage = tk.Button(self.window, text="Browse",bg=darkblue)
         self.bttn_chooseimage.place(x=midcol, y=self.y_row0)
+        # supossed to browse and change the image displayed
+        self.bttn_chooseimage.bind("<Button-1>", self.bttn_choose_image_onclick)
 
         lbl_lostfound = tk.Label(self.window, text="Person is:")
         lbl_lostfound.place(x=midcol, y=self.y_row0+50)
-        self.radio_lost = tk.Radiobutton(self.window, text="Lost", variable=self.res_radio_lost, value=0)
+        self.radio_lost = tk.Radiobutton(self.window, text="Lost", variable=self.person_radio_lost, value=0)
         self.radio_lost.place(x=midcol, y=self.y_row0+75)
-        self.radio_found = tk.Radiobutton(self.window, text="Found", variable=self.res_radio_lost, value=1)
+        self.radio_found = tk.Radiobutton(self.window, text="Found", variable=self.person_radio_lost, value=1)
         self.radio_found.place(x=midcol, y=self.y_row0+100)
 
-        # supossed to browse and change the image displayed
-        self.bttn_chooseimage.bind("<Button-1>", self.bttn_choose_image_onclick)
 
         lbl_lost_name = tk.Label(self.window, text="Name")
         lbl_lost_name.place(x=self.x_left_col, y=self.y_row1)
@@ -216,7 +176,7 @@ class GUI:
 
         lbl_place = tk.Label(self.window, text="Place")
         lbl_place.place(x=self.x_left_col, y=self.y_row2)
-        self.txtbx_place = tk.Entry(self.window, textvariable=self.person_gender)
+        self.txtbx_place = tk.Entry(self.window, textvariable=self.person_place)
         self.txtbx_place.place(x=self.x_left_col, y=self.y_row2 + 25)
 
         lbl_lost_phone = tk.Label(self.window, text="Contact phone number")
@@ -228,9 +188,9 @@ class GUI:
         lbl_lost_gender.place(x=self.x_left_col, y=self.y_row3)
         # self.txtbx_gender = tk.Entry(self.window, textvariable=self.person_gender)
         # self.txtbx_gender.place(x=self.x_left_col, y=self.y_row2 + 25)
-        self.radio_male = tk.Radiobutton(self.window, text="Male", variable=self.res_radio_gender, value="M")
+        self.radio_male = tk.Radiobutton(self.window, text="Male", variable=self.person_radio_gender, value="M")
         self.radio_male.place(x=self.x_left_col, y=self.y_row3 + 25)#x=self.x_left_col, y=self.y_row3 + 25
-        self.radio_female = tk.Radiobutton(self.window, text="Female", variable=self.res_radio_gender, value="F")
+        self.radio_female = tk.Radiobutton(self.window, text="Female", variable=self.person_radio_gender, value="F")
         self.radio_female.place(x=self.x_left_col + 50, y=self.y_row3 + 25)
 
 
@@ -238,7 +198,7 @@ class GUI:
 
         lbl_notes = tk.Label(self.window, text="Notes")
         lbl_notes.place(x=self.x_left_col + space, y=self.y_row3)
-        self.txtbx_note = tk.Entry(self.window, textvariable=self.person_phone)
+        self.txtbx_note = tk.Entry(self.window, textvariable=self.person_note)
         self.txtbx_note.place(x=self.x_left_col + space, y=self.y_row3 + 25)
 
         lbl_sketch = tk.Label(self.window, text="Sketch?")
@@ -247,7 +207,7 @@ class GUI:
         self.chbttn_sketch.place(x=self.x_left_col + 50, y=self.y_row4)
 
         # right side ----------------------------
-        load = Image.open("34AD2.jpg").resize((256, 256))
+        load = Image.open("names.jpg").resize((256, 256))
         render = ImageTk.PhotoImage(load)
         self.image_result = tk.Label(self.window, image=render)
         self.image_result.image = render
@@ -255,13 +215,11 @@ class GUI:
 
         lbl_res_name = tk.Label(self.window, text="Name")
         lbl_res_name.place(x=self.x_right_col, y=self.y_row1)
-
         self.lbl_val_name = tk.Label(self.window, textvariable=self.res_name)
         self.lbl_val_name.place(x=self.x_right_col, y=self.y_row1 + 25)
 
         lbl_res_age = tk.Label(self.window, text="Age")
         lbl_res_age.place(x=self.x_right_col + space, y=self.y_row1)
-
         self.lbl_val_age = tk.Label(self.window, textvariable=self.res_age)
         self.lbl_val_age.place(x=self.x_right_col + space, y=self.y_row1 + 25)
 
@@ -277,27 +235,51 @@ class GUI:
 
         lbl_res_place = tk.Label(self.window, text="Place")
         lbl_res_place.place(x=self.x_right_col, y=self.y_row3)
-        self.lbl_val_place = tk.Label(self.window, textvariable=self.person_gender)
+        self.lbl_val_place = tk.Label(self.window, textvariable=self.person_place)
         self.lbl_val_place.place(x=self.x_right_col, y=self.y_row3 + 25)
 
         lbl_res_notes = tk.Label(self.window, text="Notes")
         lbl_res_notes.place(x=self.x_right_col + space, y=self.y_row3)
-        self.lbl_val_note = tk.Label(self.window, textvariable=self.person_phone)
+        self.lbl_val_note = tk.Label(self.window, textvariable=self.person_note)
         self.lbl_val_note.place(x=self.x_right_col + space, y=self.y_row3 + 25)
 
         self.res_phone.set("055484654654")
 
 
         # lower part ----------------------------
-        bttn_next = tk.Button(self.window, text="Next")
+
+        bttn_next = tk.Button(self.window, text="Next",bg=darkblue)
         bttn_next.place(x=self.x_right_col+space, y=self.y_row4, height=btnsize, width=1.5*btnsize)
         bttn_next.bind("<Button-1>", self.bttn_next_onclick)  # <Button-1> = left click
 
-        bttn_start = tk.Button(self.window, text="Match")
+        bttn_start = tk.Button(self.window, text="Match",bg=darkblue)
         bttn_start.place(x=midcol+75, y=self.y_row0+self.size, height=btnsize, width=1.5*btnsize)
         bttn_start.bind("<Button-1>", self.bttn_start_onclick)  # <Button-1> = left click
 
     def show(self):
         self.window.mainloop()
 
+
+'''class DemoIntro:
+    window = tk.Tk()
+   # main_screen = GUI()
+    def startbutton_onclick(self,a):
+        main = tk.Toplevel(GUI)
+
+    def setup(self):
+        bttn_chooseimage = tk.Button(self.window, text="Browse", bg="white")
+        bttn_chooseimage.place(x=0, y=0)
+        bttn_chooseimage.bind("<Button-1>", self.startbutton_onclick)
+
+
+
+    def show(self):
+        self.window.mainloop()
+
+    def __init__(self):
+        self.setup()
+        self.show()
+
+'''
+# window = DemoIntro()
 window = GUI()
