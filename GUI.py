@@ -71,14 +71,11 @@ class GUI:
         currdir = os.getcwd()
         tempdir = tk.filedialog.askopenfile(parent=self.window, initialdir=currdir, title='Please select a directory')
         if len(tempdir.name) > 0:
-            #tempdir_split = tempdir.name.split('/')
-            #path = tempdir.name - tempdir_split[-1]
-
             opened = Image.open(tempdir.name)
             render = ImageTk.PhotoImage(opened.resize((self.size, self.size)))
             if render is not None:
+                self.image_static.configure(image = render)
                 self.image_static.image = render
-                self.image_static.pack()
                 return
             else:
                 msg = tk.messagebox.showinfo("invalid image path")
