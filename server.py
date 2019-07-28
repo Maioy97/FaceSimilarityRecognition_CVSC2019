@@ -1,12 +1,15 @@
 from flask import Flask
 from flask_restful import reqparse, abort, Api, Resource
 import json
-
+from PIL import Image
 from tensorflow.compat.v1.keras.models import load_model
 from mtcnn.mtcnn import MTCNN
 from shutil import copyfile
 import Facenet_compare
-
+from PIL import ExifTags
+import traceback
+import sys
+import os
 app = Flask(__name__)
 api = Api(app)
 
@@ -29,18 +32,32 @@ parser.add_argument('notes', type=str)
 class addPhoto(Resource):
     def post(self, person_id, List):
         args = parser.parse_args()
-        people[List][person_id]['photo_count'] = people[List][person_id]['photo_count'] + 1
-        
-        #copy image, get vector, save vector
-        new_image_path = List+'/'+str(person_id)+'_'+str(people[List][person_id]['photo_count']-1)
-        copyfile(args['image_path'], new_image_path)
-        vector = Facenet_compare.crop_face(new_image_path,faceDetection, facenet_model)
-        Facenet_compare.vector_to_csv(vector,new_image_path)
+        t=people[List]
+        print(t)
+        if int(person_id) in t:
+            t1=t[int(person_id)]
+            t1['photo_count'] = str(int(people[List][int(person_id)]['photo_count']) + 1)
+            t[int(person_id)]=t1
+            people[List]=t
+            
+            #copy image, get vector, save vector
+            new_image_path = List+'/'+str(person_id)+'_'+str(int(people[List][int(person_id)]['photo_count']) - 1)+'.jpg'
 
-        with open(filename, 'w') as f:
-            json.dump(people, f)
+            if args['image_path'][-3:].lower() !='jpg':
+                image = Image.open(args['image_path']).convert('RGB')
+                image.save(new_image_path , 'JPEG')
+            else:
+                copyfile(args['image_path'],new_image_path)
 
-        return person_id
+            vector = Facenet_compare.crop_face(new_image_path,faceDetection, facenet_model)
+            Facenet_compare.vector_to_csv(vector,new_image_path)
+
+            with open('sample.json', 'w') as f:
+                json.dump(people, f)
+
+            return int(person_id)
+        else:
+            return "Id is wrong, please correct it"
 
 
 # lets you POST to add new person given its list
@@ -48,22 +65,35 @@ class Addperson(Resource):
     def post(self, List):
         #parse arguments and add the info to json file 
         args = parser.parse_args()
-        person_id = int(max(people[List].keys())) + 1
-        people[List][person_id] = {'name': args['name'],'birth_year': args['birth_year'],
+        if people[List] =={}:
+            person_id=0
+        else:
+            person_id = int(max(people[List].keys())) + 1
+        print(people[List].keys())
+        print(person_id)
+        list = people[List]
+        list[int(person_id)] = {'name': args['name'],'birth_year': args['birth_year'],
         'lost_found_date': args['lost_found_date'],
         'sketch': args['sketch'],'found_lost_place': args['found_lost_place'],
         'contact_number': args['contact_number'],'gender': args['gender'],
         'notes': args['notes'],'photo_count':1 }
+        people[List]=list
         #copy image, get vector, save vector
-        new_image_path = List+'/'+str(person_id)+'_'+str(people[List][person_id]['photo_count']-1)
-        copyfile(args['image_path'], new_image_path)
+        new_image_path = List+'/'+str(person_id)+'_'+str(people[List][person_id]['photo_count']-1)+'.jpg'
+
+        if args['image_path'][:3].lower() !='jpg':
+            image = Image.open(args['image_path']).convert('RGB')
+            image.save(new_image_path , 'JPEG')
+        else:
+            copyfile(args['image_path'],new_image_path)
+
         vector = Facenet_compare.crop_face(new_image_path,faceDetection, facenet_model)
         Facenet_compare.vector_to_csv(vector,new_image_path)
 
-        with open(filename, 'w') as f:
+        with open('sample.json', 'w') as f:
             json.dump(people, f)
 
-        return people[List][person_id], 201
+        return person_id
 
 class get_similar_people(Resource):
     def post(self, person_id, List):
@@ -91,8 +121,20 @@ api.add_resource(addPhoto, '/addPhoto/<person_id>/<List>')
 api.add_resource(get_similar_people, '/get_similar_people/<person_id>/<List>')
 
 if __name__ == '__main__':
+    people = {'found':{},'lost':{}}
+    try:
+        with open('sample.json', 'r') as f:
+            temp_dictionary = json.load(f)
+            for k in temp_dictionary:
+                for k1 in temp_dictionary[k]:
+                    t = people[k]
+                    t[int(k1)] = temp_dictionary[k][k1]
+                    people[k] = t
+        print(people)
+    except:
+        print('************************************************')
+        print(traceback.print_exc())
+        print('************************************************')
     faceDetection = MTCNN()
     facenet_model = load_model('../facenet_keras.h5')
-    with open('sample.json', 'r') as f:
-        people = json.load(f)
-    app.run(debug=True)
+    app.run(host = "localhost",port=8000,debug=True)

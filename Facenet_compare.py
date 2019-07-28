@@ -18,14 +18,14 @@ def filter_list(people,List,person_info):
     filtered_list = []
     threshold = 5
     today = date.today()
-    age = today.years-person_info['birth_year']
+    age = today.years-int(person_info['birth_year'])
     if age > 20:
         threshold = 15
     # Iterate over all the items in dictionary
     for (key, value) in people[List].items():
         # Check if item satisfies the given condition then add to new dict
         if value['gender'] == person_info['gender']:
-            difference = abs(value['birth_year'] - person_info['birth_year'])
+            difference = abs(int(value['birth_year']) - int(person_info['birth_year']))
             if difference < threshold:
                 filtered_list.append([List+'/'+str(key)+'_'+str(i)] for i in range(people[List][key]['photo_count']))
     return filtered_list
@@ -39,7 +39,7 @@ def vector_to_csv(vector, imagename, filename="../vectors.csv"):
             writer.writerow(fieldnames)
 
         # writer.writerow({'id':'id', 'label':'label'})
-        row = [str(imagename), vector]
+        row = [str(imagename[:-4]), vector]
         writer.writerow(row)  # ({'id': line, 'label': aftersep})
 
 
@@ -56,9 +56,6 @@ def get_embedding_dic(filename="../vectors.csv"):  # reads the csv into dictiona
 
 def embed_croped_face(model, cropped):
     img = cv2.resize(cropped, (160, 160))
-    #plt.imshow(img)
-    #plt.xticks([]), plt.yticks([])
-    #plt.show()
     img = img_to_array(img)
     img = np.expand_dims(img, axis=0)
     vector = model.predict(img)
@@ -66,7 +63,9 @@ def embed_croped_face(model, cropped):
 
 
 def crop_face(img, faceDetection, model):
+    print(img)
     data = cv2.imread(img)
+    #cv2.imshow(img,data)
     data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
     # detect faces
     boxes = faceDetection.detect_faces(data)
@@ -132,16 +131,16 @@ def compare_all_filtered(image_to_compare, filtered_List):
 
     embedding_dictionary = get_embedding_dic()
 
-    s = StringIO(embedding_dictionary[image_to_compare][2:len(embedding_dictionary[image_to_compare]) - 2].replace('\n', ' '))
+    s = StringIO(embedding_dictionary[image_to_compare[:-4]][2:len(embedding_dictionary[image_to_compare[:-4]]) - 2].replace('\n', ' '))
     image_to_compare_vector = np.genfromtxt(s, skip_header=False)
 
     dict_imgname_distance = {}
     for img in filtered_List:
-        if not img in embedding_dictionary:
+        if not img[:-4] in embedding_dictionary:
             continue
-        s = StringIO(embedding_dictionary[img][2:len(embedding_dictionary[img]) - 2].replace('\n', ' '))
+        s = StringIO(embedding_dictionary[img[:-4]][2:len(embedding_dictionary[img[:-4]]) - 2].replace('\n', ' '))
         current_vector = np.genfromtxt(s, skip_header=False)
-        dict_imgname_distance[img] = compare(image_to_compare_vector, current_vector)
+        dict_imgname_distance[img[:-4]] = compare(image_to_compare_vector, current_vector)
     return sorted(dict_imgname_distance, key=dict_imgname_distance.get)  #  image names sorted by distance
 
 
