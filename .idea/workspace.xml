@@ -13,11 +13,23 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/GUI.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="89">
-              <caret line="69" column="38" lean-forward="true" selection-start-line="69" selection-start-column="38" selection-end-line="69" selection-end-column="41" />
+            <state relative-caret-position="280">
+              <caret line="179" column="53" selection-start-line="179" selection-start-column="53" selection-end-line="179" selection-end-column="53" />
               <folding>
                 <element signature="e#0#20#0" expanded="true" />
+                <element signature="e#1473#2024#0" />
+                <element signature="e#2070#2445#0" />
+                <element signature="e#2492#6193#0" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sample.json">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="102">
+              <caret line="6" column="29" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="29" />
             </state>
           </provider>
         </entry>
@@ -25,8 +37,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/AppData/Local/Continuum/anaconda3/Lib/tkinter/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="28866">
-              <caret line="1701" selection-start-line="1701" selection-end-line="1701" />
+            <state relative-caret-position="328">
+              <caret line="105" selection-start-line="105" selection-end-line="105" />
             </state>
           </provider>
         </entry>
@@ -37,6 +49,7 @@
     <findStrings>
       <find>Entry</find>
       <find>+</find>
+      <find>butt</find>
     </findStrings>
     <replaceStrings>
       <replace>Label</replace>
@@ -160,20 +173,6 @@
     </layout>
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/GUI.py</url>
-          <line>77</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/GUI.py</url>
-          <line>73</line>
-          <option name="timeStamp" value="4" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
         <watch expression="tempdir.name" />
@@ -181,20 +180,30 @@
     </watches-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/GUI.py">
+    <entry file="file://$PROJECT_DIR$/sample.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="89">
-          <caret line="69" column="38" lean-forward="true" selection-start-line="69" selection-start-column="38" selection-end-line="69" selection-end-column="41" />
-          <folding>
-            <element signature="e#0#20#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="102">
+          <caret line="6" column="29" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="29" />
         </state>
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/AppData/Local/Continuum/anaconda3/Lib/tkinter/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="28866">
-          <caret line="1701" selection-start-line="1701" selection-end-line="1701" />
+        <state relative-caret-position="328">
+          <caret line="105" selection-start-line="105" selection-end-line="105" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/GUI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="280">
+          <caret line="179" column="53" selection-start-line="179" selection-start-column="53" selection-end-line="179" selection-end-column="53" />
+          <folding>
+            <element signature="e#0#20#0" expanded="true" />
+            <element signature="e#1473#2024#0" />
+            <element signature="e#2070#2445#0" />
+            <element signature="e#2492#6193#0" />
+          </folding>
         </state>
       </provider>
     </entry>
