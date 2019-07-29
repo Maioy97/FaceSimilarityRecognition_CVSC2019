@@ -1,11 +1,16 @@
 import requests
 import json
+import base64
 
-Person_id = 3
+Person_id = 0
+img_id='1_0'
 List = 'found'
-AddpersonURL = 'http://localhost:8000/Addperson/'+ List
-addPhotoURL = 'http://localhost:8000/addPhoto/'+str(Person_id)+'/'+List
-get_similar_peopleURL = 'http://localhost:8000/get_similar_people/'+str(Person_id)+'/'+List
+AddpersonURL = 'http://localhost:5021/Addperson/'+ List
+addPhotoURL = 'http://localhost:5021/addPhoto/'+str(Person_id)+'/'+List
+get_similar_peopleURL = 'http://localhost:5021/get_similar_people/'+str(Person_id)+'/'+List
+get_infoURL = 'http://localhost:5021/get_info/'+ List+'/'+img_id
+with open("C:/Users/Haya/Desktop/test/1.JPG", "rb") as imageFile:
+    Img_str = base64.b64encode(imageFile.read())
 
 data = {"name": "nameX",
         "birth_year":"2001" ,
@@ -16,6 +21,9 @@ data = {"name": "nameX",
         "gender":"M",
         "notes":"any Notes",
         "photo_count":"1",
-        "image_path":"C:/Users/Haya/Desktop/test/1.JPG"}
-data2 = {"image_path":"C:/Users/Haya/Desktop/test/1 (2).JPG"}
-print(requests.post(AddpersonURL, data=data).text)
+        "image":Img_str,
+        "image_ext":"jpg"}
+data2 = {"image":Img_str,
+        "image_ext":"jpg"}
+print(requests.post(get_infoURL).text)
+

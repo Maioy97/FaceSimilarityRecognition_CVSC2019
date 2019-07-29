@@ -10,6 +10,8 @@ from PIL import ExifTags
 import traceback
 import sys
 import os
+import base64
+
 app = Flask(__name__)
 api = Api(app)
 
@@ -24,7 +26,8 @@ parser.add_argument('sketch',type=bool)
 parser.add_argument('found_lost_place', type=str)
 parser.add_argument('contact_number', type=str)
 parser.add_argument('gender', type=str)
-parser.add_argument('image_path', type=str)
+parser.add_argument('image', type=str)
+parser.add_argument('image_ext', type=str)
 parser.add_argument('notes', type=str)
 
 # Todo
@@ -41,13 +44,17 @@ class addPhoto(Resource):
             people[List]=t
             
             #copy image, get vector, save vector
+            fh = open("temp."+args['image_ext'], "wb")
+            fh.write(base64.b64decode(args['image']))
+            fh.close()
+            
             new_image_path = List+'/'+str(person_id)+'_'+str(int(people[List][int(person_id)]['photo_count']) - 1)+'.jpg'
 
-            if args['image_path'][-3:].lower() !='jpg':
-                image = Image.open(args['image_path']).convert('RGB')
+            if args['image_ext'].lower() !='jpg':
+                image = Image.open("temp."+args['image_ext']).convert('RGB')
                 image.save(new_image_path , 'JPEG')
             else:
-                copyfile(args['image_path'],new_image_path)
+                os.rename("temp."+args['image_ext'],new_image_path)
 
             vector = Facenet_compare.crop_face(new_image_path,faceDetection, facenet_model)
             Facenet_compare.vector_to_csv(vector,new_image_path)
@@ -79,13 +86,16 @@ class Addperson(Resource):
         'notes': args['notes'],'photo_count':1 }
         people[List]=list
         #copy image, get vector, save vector
+        fh = open("temp."+args['image_ext'], "wb")
+        fh.write(base64.b64decode(args['image']))
+        fh.close()
         new_image_path = List+'/'+str(person_id)+'_'+str(people[List][person_id]['photo_count']-1)+'.jpg'
 
-        if args['image_path'][:3].lower() !='jpg':
-            image = Image.open(args['image_path']).convert('RGB')
+        if args['image_ext'].lower() !='jpg':
+            image = Image.open("temp."+args['image_ext']).convert('RGB')
             image.save(new_image_path , 'JPEG')
         else:
-            copyfile(args['image_path'],new_image_path)
+            os.rename("temp."+args['image_ext'],new_image_path)
 
         vector = Facenet_compare.crop_face(new_image_path,faceDetection, facenet_model)
         Facenet_compare.vector_to_csv(vector,new_image_path)
@@ -113,12 +123,23 @@ class get_similar_people(Resource):
         # https://twitter.com/raymondh/status/944125570534621185
         return list(dict.fromkeys(result))#list of pathes sorted & merged with no duplicates
 
+class get_info(Resource):
+    def post(self, List, img_ingex):
+        person_id = img_ingex.split('_')[0]
+        ret = people[List][int(person_id)]
+        with open(List+'/'+img_ingex+'.jpg', "rb") as imageFile:
+            ret['image'] = str(base64.b64encode(imageFile.read()))
+        ret['image_ext'] = 'jpg'
+        return ret
+
+
 ##
 ## Actually setup the Api resource routing here
 ##
 api.add_resource(Addperson, '/Addperson/<List>')
 api.add_resource(addPhoto, '/addPhoto/<person_id>/<List>')
 api.add_resource(get_similar_people, '/get_similar_people/<person_id>/<List>')
+api.add_resource(get_info, '/get_info/<List>/<img_ingex>')
 
 if __name__ == '__main__':
     people = {'found':{},'lost':{}}
@@ -137,4 +158,4 @@ if __name__ == '__main__':
         print('************************************************')
     faceDetection = MTCNN()
     facenet_model = load_model('../facenet_keras.h5')
-    app.run(host = "localhost",port=8000,debug=True)
+    app.run(host = "localhost",port=5021 ,debug=True)
