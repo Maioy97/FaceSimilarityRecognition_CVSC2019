@@ -88,10 +88,10 @@ class GUI:
 
     Person_id = 3
     List = 'found'
-    addpersonURL =  'http://156.204.126.104:8000/Addperson/'
-    addphotoURL = 'http://156.204.126.104:8000/addPhoto/'
-    get_similar_peopleURL = 'http://156.204.126.104:8000/get_similar_people/'
-    get_infoURL = 'http://156.204.126.104:8000/get_info/'
+    addpersonURL =  'http://localhost:5021/Addperson/'
+    addphotoURL = 'http://localhost:5021/addPhoto/'
+    get_similar_peopleURL = 'http://localhost:5021/get_similar_people/'
+    get_infoURL = 'http://1localhost:5021/get_info/'
 
     #addPhotoURL =  + str(Person_id) + '/' + List
     get_similar_peopleURL = 'http://localhost:8000/get_similar_people/' + str(Person_id) + '/' + List
