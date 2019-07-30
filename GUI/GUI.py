@@ -55,7 +55,7 @@ class GUI:
     lbl_val_gender = None
     lbl_val_note = None
     lbl_val_place = None
-
+    threshold = 0 #max number of matches to display
 
     res_name = tk.StringVar()
     res_age = tk.IntVar()
@@ -92,10 +92,10 @@ class GUI:
 
     Person_id = 3
     List = 'found'
-    addpersonURL =  'http://localhost:5021/Addperson/'
-    addphotoURL = 'http://localhost:5021/addPhoto/'
-    get_similar_peopleURL = 'http://localhost:5021/get_similar_people/'
-    get_infoURL = 'http://localhost:5021/get_info/'
+    addpersonURL =  'http://192.168.1.22:5021/Addperson/'
+    addphotoURL = 'http://192.168.1.22:5021/addPhoto/'
+    get_similar_peopleURL = 'http://192.168.1.22:5021/get_similar_people/'
+    get_infoURL = 'http://192.168.1.22:5021/get_info/'
 
     #addPhotoURL =  + str(Person_id) + '/' + List
     #get_similar_peopleURL = 'http://localhost:8000/get_similar_people/' + str(Person_id) + '/' + List
@@ -109,21 +109,21 @@ class GUI:
         d1 = current_date.strftime("%d/%m/%Y")
         year = d1.split("/")
         year = int(year[-1])
-        msg = tk.messagebox.showinfo("data",lost_one_data)
-        lost_one_data = json.loads(lost_one_data)
-        
-        birth_year = int(lost_one_data["birth_year"])
+        #msg = tk.messagebox.showinfo("data",lost_one_data[:100])
+        data0 = json.loads(lost_one_data)
+        data = json.loads(data0)
+        birth_year = int(data["birth_year"])
 
-        self.res_name.set(lost_one_data["name"])
+        self.res_name.set(data["name"])
         self.res_age.set(year - birth_year)
-        self.res_place.set(lost_one_data["found_lost_place"])
-        self.res_phone.set(lost_one_data["contact_number"])
-        self.res_gender.set(lost_one_data["gender"])
-        self.res_note.set(lost_one_data["notes"])
-        imgS_str = lost_one_data["image"]
-        image_ext = lost_one_data["image_ext"]
+        self.res_place.set(data["found_lost_place"])
+        self.res_phone.set(data["contact_number"])
+        self.res_gender.set(data["gender"])
+        self.res_note.set(data["notes"])
+        imgS_str = data["image"]
+        image_ext = data["image_ext"]
         fh = open("temp." + image_ext, "wb")
-        fh.write(base64.b64decode(bytes(imgS_str)))
+        fh.write(base64.b64decode(imgS_str))
         fh.close()
         opened = Image.open("temp."+image_ext)
         render = ImageTk.PhotoImage(opened.resize((self.size, self.size)))
@@ -148,15 +148,14 @@ class GUI:
                 msg = tk.messagebox.showinfo("invalid image path")
 
     def bttn_next_onclick(self, a):
-        if self.res_index >0:
-            list_result=self.res_list
-            s = StringIO(list_result[1:len(list_result) - 1].replace(',', ' '))
-            current_vector = np.genfromtxt(s, skip_header=False)
-
-            newURL = self.get_infoURL + list_result[self.res_index]
-            info = requests.post(newURL)
-            self.res_index = self.res_index + 1
-            self.fillUI(info)
+        if self.res_index > 0 :
+            if self.res_index<self.threshold:
+                newURL = self.get_infoURL + self.res_list[self.res_index].replace(' ', '')
+                info = requests.post(newURL).text
+                self.res_index = self.res_index + 1
+                self.fillUI(info)
+            else:
+                msg = tk.messagebox.showinfo("no Next found" ,"no more matches")
         else:
             msg = tk.messagebox.showinfo("no Next found" ,"please use Match first")
 
@@ -206,21 +205,24 @@ class GUI:
             requests.post(newURL, lost_one_data)
 
         newURL = self.get_similar_peopleURL + Person_id + '/'+ self.person_radio_lost.get()
-        self.res_list = requests.post(newURL).text
+         
         # call the function that returns json using res_list[0]
-        list_result=self.res_list
-        s = StringIO(list_result[1:len(list_result) - 1].replace('\n', '').replace('"', ''))
-        msg = tk.messagebox.showinfo("list",list_result[1:len(list_result) - 1])
-        current_vector = np.genfromtxt(s,delimiter =',',dtype ='str', skip_header=False)
+        list_result = requests.post(newURL).text
+        if list_result.replace('"','').replace('\n','') == "no matches after age and gender filtering":
+            msg = tk.messagebox.showinfo("no match","no matches after age and gender filtering")
+        else:
+            s = StringIO(list_result[1:len(list_result) - 2].replace('\n', '').replace('"', ''))
+            #msg = tk.messagebox.showinfo("list",list_result[1:len(list_result) - 2])
+            self.res_list = np.genfromtxt(s,delimiter =',',dtype ='str', skip_header=False)
+            self.threshold = len(self.res_list)
+            #msg = tk.messagebox.showinfo("list",str(self.res_list[0]))
+            newURL = self.get_infoURL + self.res_list[self.res_index].replace(' ', '')
 
-        msg = tk.messagebox.showinfo("list",str(current_vector[0]))
-        newURL = self.get_infoURL + current_vector[self.res_index].replace(' ', '')
+            #msg = tk.messagebox.showinfo("list",newURL)
+            info = requests.post(newURL).text
 
-        msg = tk.messagebox.showinfo("list",newURL)
-        info = requests.post(newURL).text
-        msg = tk.messagebox.showinfo("list",info)
-        self.res_index = 1
-        self.fillUI(info)
+            self.res_index = 1
+            self.fillUI(info)
 
     def setup(self):
         darkblue = "#a0c2ff"

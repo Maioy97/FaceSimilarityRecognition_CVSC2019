@@ -36,7 +36,7 @@ class addPhoto(Resource):
     def post(self, person_id, List):
         args = parser.parse_args()
         t=people[List]
-        print(t)
+        #print(t)
         if int(person_id) in t:
             t1=t[int(person_id)]
             t1['photo_count'] = str(int(people[List][int(person_id)]['photo_count']) + 1)
@@ -76,8 +76,8 @@ class Addperson(Resource):
             person_id=0
         else:
             person_id = int(max(people[List].keys())) + 1
-        print(people[List].keys())
-        print(person_id)
+        #print(people[List].keys())
+        #print(person_id)
         list = people[List]
         list[int(person_id)] = {'name': args['name'],'birth_year': args['birth_year'],
         'lost_found_date': args['lost_found_date'],
@@ -113,7 +113,8 @@ class get_similar_people(Resource):
 
         filtered_list = Facenet_compare.filter_list(people,List_to_search,people[List][int(person_id)])
         result = [None]*(len(filtered_list)*int(people[List][int(person_id)]['photo_count']))
-
+        if(len(filtered_list)==0):
+            return "no matches after age and gender filtering"
         for i in range (int(people[List][int(person_id)]['photo_count'])):
             image_path = List+'/'+str(person_id)+'_'+str(i)
             sorted_distances = Facenet_compare.compare_all_filtered(image_path,filtered_list)
@@ -122,21 +123,22 @@ class get_similar_people(Resource):
 
         # Raymond Hettinger
         # https://twitter.com/raymondh/status/944125570534621185
-        print('**************************')
+        #print('**************************')
+        #print(result)
+        #print('**************************')
         print(result)
-        print('**************************')
         return list(dict.fromkeys([item for sublist in map(list, zip(*result)) for item in sublist]))#list of pathes sorted & merged with no duplicates
 
 class get_info(Resource):
     def post(self, List, img_ingex):
         person_id = img_ingex.split('_')[0]
-        ret = people[List][int(person_id)]
+        ret = dict(people[List][int(person_id)])#not to update the original one
         with open(List+'/'+img_ingex+'.jpg', "rb") as imageFile:
-            ret['image'] = str(base64.b64encode(imageFile.read()))
-        ret['image_ext'] = 'jpg'
-        print(ret)
-        return ret
+            ret['image'] = base64.b64encode(imageFile.read()).decode('utf-8')
 
+        ret['image_ext'] = 'jpg'
+        return json.dumps(ret)
+        
 
 ##
 ## Actually setup the Api resource routing here
@@ -156,11 +158,11 @@ if __name__ == '__main__':
                     t = people[k]
                     t[int(k1)] = temp_dictionary[k][k1]
                     people[k] = t
-        print(people)
+        #print(people)
     except:
         print('************************************************')
         print(traceback.print_exc())
         print('************************************************')
     faceDetection = MTCNN()
     facenet_model = load_model('facenet_keras.h5')
-    app.run(host = "localhost",port=5021 ,debug=True)
+    app.run(host = '0.0.0.0' ,port=5021 ,debug=True)

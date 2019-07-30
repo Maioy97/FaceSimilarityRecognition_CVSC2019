@@ -132,7 +132,7 @@ def compare_all_filtered(image_to_compare, filtered_List):
 
     embedding_dictionary = get_embedding_dic()
 
-    s = StringIO(embedding_dictionary[image_to_compare][2:len(embedding_dictionary[image_to_compare]) - 2].replace('\n', ' '))
+    s = StringIO(embedding_dictionary[image_to_compare][2:len(embedding_dictionary[image_to_compare]) - 2].replace('\n', ''))
     image_to_compare_vector = np.genfromtxt(s, skip_header=False)
 
     dict_imgname_distance = {}
@@ -140,7 +140,7 @@ def compare_all_filtered(image_to_compare, filtered_List):
         for img in img_list:
             if not  (img in embedding_dictionary):
                 continue
-            s = StringIO(embedding_dictionary[img][2:len(embedding_dictionary[img]) - 2].replace('\n', ' '))
+            s = StringIO(embedding_dictionary[img][2:len(embedding_dictionary[img]) - 2].replace('\n', ''))
             current_vector = np.genfromtxt(s, skip_header=False)
             dict_imgname_distance[img] = compare(image_to_compare_vector, current_vector)
     return sorted(dict_imgname_distance, key=dict_imgname_distance.get)  #  image names sorted by distance
