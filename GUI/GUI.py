@@ -92,10 +92,10 @@ class GUI:
 
     Person_id = 3
     List = 'found'
-    addpersonURL =  'http://192.168.1.22:5021/Addperson/'
-    addphotoURL = 'http://192.168.1.22:5021/addPhoto/'
-    get_similar_peopleURL = 'http://192.168.1.22:5021/get_similar_people/'
-    get_infoURL = 'http://192.168.1.22:5021/get_info/'
+    addpersonURL =  'http://localhost:5021/Addperson/'
+    addphotoURL = 'http://localhost:5021/addPhoto/'
+    get_similar_peopleURL = 'http://localhost:5021/get_similar_people/'
+    get_infoURL = 'http://localhost:5021/get_info/'
 
     #addPhotoURL =  + str(Person_id) + '/' + List
     #get_similar_peopleURL = 'http://localhost:8000/get_similar_people/' + str(Person_id) + '/' + List
@@ -184,7 +184,10 @@ class GUI:
             lost_one_data["name"] = self.person_name.get()
             lost_one_data["birth_year"] = birth_year
             lost_one_data["lost_found_date"] = current_date
-            lost_one_data["sketch"] = self.sketch.get()
+            if self.sketch.get():
+                lost_one_data["sketch"] = '1'
+            else :
+                lost_one_data["sketch"] = '0'
             lost_one_data["found_lost_place"] = self.person_place.get()
             lost_one_data["contact_number"] = self.person_phone.get()
             lost_one_data["gender"] = self.person_radio_gender.get()
@@ -210,7 +213,10 @@ class GUI:
         list_result = requests.post(newURL).text
         if list_result.replace('"','').replace('\n','') == "no matches after age and gender filtering":
             msg = tk.messagebox.showinfo("no match","no matches after age and gender filtering")
+        elif list_result.replace('"','').replace('\n','') =='No match Found':
+            msg = tk.messagebox.showinfo("no match","No match Found")
         else:
+            self.res_index = 0
             s = StringIO(list_result[1:len(list_result) - 2].replace('\n', '').replace('"', ''))
             #msg = tk.messagebox.showinfo("list",list_result[1:len(list_result) - 2])
             self.res_list = np.genfromtxt(s,delimiter =',',dtype ='str', skip_header=False)

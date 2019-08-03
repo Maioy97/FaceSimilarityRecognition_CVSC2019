@@ -64,7 +64,7 @@ def embed_croped_face(model, cropped):
 
 
 def crop_face(img, faceDetection, model):
-    print(img)
+    #print(img)
     data = cv2.imread(img)
     #cv2.imshow(img,data)
     data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
@@ -77,27 +77,55 @@ def crop_face(img, faceDetection, model):
             x = 0
         if y < 0:
             y = 0
-        cropped_img = data[y:y + height, x:x + width]
+
+        delta_y=int(height*0.15)
+        delta_x=int(width*0.15)
+        cropped_img = data[y+delta_y:y+height-delta_y,x+delta_x:x+width-delta_x]
 
         return embed_croped_face(model, cropped_img)
     else:
         # cv2_imshow(data)
-        data = np.transpose(data, (1, 0, 2))
+
+        data1 = np.transpose(data, (1, 0, 2))
         # cv2_imshow(data)
-        boxes = faceDetection.detect_faces(data)
+        boxes = faceDetection.detect_faces(data1)
         # crop face
         if len(boxes) == 0:
             print('no face found in ' + img)
-            return
+            return embed_croped_face(model, data)
         x, y, width, height = boxes[0]['box']
         if x < 0:
             x = 0
         if y < 0:
             y = 0
-        cropped_img = data[y:y + height, x:x + width]
+
+        delta_y=int(height*0.15)
+        delta_x=int(width*0.15)
+        cropped_img = data1[y+delta_y:y+height-delta_y,x+delta_x:x+width-delta_x]
+
 
         return embed_croped_face(model, cropped_img)
 
+def crop_save(img, faceDetection):
+    data = cv2.imread(img)
+    #cv2.imshow(img,data)
+    data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+    # detect faces
+    boxes = faceDetection.detect_faces(data)
+    if len(boxes) > 0:
+        # crop face
+        x, y, width, height = boxes[0]['box']
+        if x < 0:
+            x = 0
+        if y < 0:
+            y = 0
+        
+        delta_y=int(height*0.15)
+        delta_x=int(width*0.15)
+        cropped_img = data[y+delta_y:y+height-delta_y,x+delta_x:x+width-delta_x]
+
+        os.remove(img)
+        cv2.imwrite(img , cropped_img)
 
 def embed_all_faces(image_directory, faceDetection, model, embedding_dictionary):
     # load models
@@ -131,8 +159,9 @@ def compare(img1_representation, img2_representation):
 def compare_all_filtered(image_to_compare, filtered_List):
 
     embedding_dictionary = get_embedding_dic()
-
-    s = StringIO(embedding_dictionary[image_to_compare][2:len(embedding_dictionary[image_to_compare]) - 2].replace('\n', ''))
+    print(embedding_dictionary[image_to_compare.replace('\n', '')][2:len(embedding_dictionary[image_to_compare.replace('\n', '')]) - 2].replace('\n', ''))
+    print(image_to_compare.replace('\n', ''))
+    s = StringIO(embedding_dictionary[image_to_compare.replace('\n', '')][2:len(embedding_dictionary[image_to_compare.replace('\n', '')]) - 2].replace('\n', ''))
     image_to_compare_vector = np.genfromtxt(s, skip_header=False)
 
     dict_imgname_distance = {}
@@ -140,10 +169,12 @@ def compare_all_filtered(image_to_compare, filtered_List):
         for img in img_list:
             if not  (img in embedding_dictionary):
                 continue
-            s = StringIO(embedding_dictionary[img][2:len(embedding_dictionary[img]) - 2].replace('\n', ''))
+            s = StringIO(embedding_dictionary[img.replace('\n', '')][2:len(embedding_dictionary[img]) - 2].replace('\n', ''))
             current_vector = np.genfromtxt(s, skip_header=False)
             dict_imgname_distance[img] = compare(image_to_compare_vector, current_vector)
-    return sorted(dict_imgname_distance, key=dict_imgname_distance.get)  #  image names sorted by distance
+    print(dict_imgname_distance)
+    key_min = min(dict_imgname_distance.keys(), key=(lambda k: dict_imgname_distance[k]))
+    return sorted(dict_imgname_distance, key=dict_imgname_distance.get), dict_imgname_distance[key_min]  #  image names sorted by distance
 
 
 # info is a dictionary containing all information about the person including (name, birth date, lost/found date,

@@ -11,6 +11,9 @@ import traceback
 import sys
 import os
 import base64
+import shutil
+from pix2pix import *
+from operator import itemgetter
 
 app = Flask(__name__)
 api = Api(app)
@@ -22,7 +25,7 @@ parser = reqparse.RequestParser()
 parser.add_argument('name', type=str)
 parser.add_argument('birth_year')
 parser.add_argument('lost_found_date')
-parser.add_argument('sketch',type=bool)
+parser.add_argument('sketch',type=str)
 parser.add_argument('found_lost_place', type=str)
 parser.add_argument('contact_number', type=str)
 parser.add_argument('gender', type=str)
@@ -89,7 +92,7 @@ class Addperson(Resource):
         fh = open("temp."+args['image_ext'], "wb")
         fh.write(base64.b64decode(args['image']))
         fh.close()
-        new_image_path = List+'/'+str(person_id)+'_'+str(people[List][person_id]['photo_count']-1)+'.jpg'
+        new_image_path = List+'/'+str(person_id)+'_'+str(int(people[List][int(person_id)]['photo_count'])-1)+'.jpg'
 
         if args['image_ext'].lower() !='jpg':
             image = Image.open("temp."+args['image_ext']).convert('RGB')
@@ -98,7 +101,30 @@ class Addperson(Resource):
             os.rename("temp."+args['image_ext'],new_image_path)
 
         vector = Facenet_compare.crop_face(new_image_path,faceDetection, facenet_model)
+
         Facenet_compare.vector_to_csv(vector,new_image_path)
+        print(args['sketch'])
+        if args['sketch']=='1':
+            t=people[List]
+            t1=t[int(person_id)]
+            t1['photo_count'] = str(int(people[List][int(person_id)]['photo_count']) + 1)
+            t[int(person_id)]=t1
+            people[List]=t
+            try:
+                os.remove('temp/temp.jpg')
+            except:
+                pass
+            copyfile(new_image_path,'temp/temp.jpg')
+            new_image_path = List+'/'+str(person_id)+'_'+str(int(people[List][int(person_id)]['photo_count'])-1)+'.jpg'
+            Facenet_compare.crop_save('temp/temp.jpg', faceDetection)
+            test_dataset = tf.data.Dataset.list_files('temp/*.jpg')
+            test_dataset = test_dataset.map(load_image_test)
+            test_dataset = test_dataset.batch(1)
+
+            for inp in test_dataset:
+                generate_save_images(new_image_path,generator, inp)
+            vector = Facenet_compare.crop_face(new_image_path,faceDetection, facenet_model)
+            Facenet_compare.vector_to_csv(vector,new_image_path)
 
         with open('sample.json', 'w') as f:
             json.dump(people, f)
@@ -112,22 +138,29 @@ class get_similar_people(Resource):
             List_to_search = 'found'
 
         filtered_list = Facenet_compare.filter_list(people,List_to_search,people[List][int(person_id)])
-        result = [None]*(len(filtered_list)*int(people[List][int(person_id)]['photo_count']))
+        result = []#[None]*(len(filtered_list)*int(people[List][int(person_id)]['photo_count']))
+        
         if(len(filtered_list)==0):
             return "no matches after age and gender filtering"
         for i in range (int(people[List][int(person_id)]['photo_count'])):
             image_path = List+'/'+str(person_id)+'_'+str(i)
-            sorted_distances = Facenet_compare.compare_all_filtered(image_path,filtered_list)
+            sorted_distances, min_distance = Facenet_compare.compare_all_filtered(image_path,filtered_list)
             #print(sorted_distances)
-            result[i] = sorted_distances
-
+            result.append((sorted_distances, min_distance))
+        result.sort(key=itemgetter(1))
+        result = [x[0] for x in result]
         # Raymond Hettinger
         # https://twitter.com/raymondh/status/944125570534621185
         #print('**************************')
         #print(result)
         #print('**************************')
         print(result)
-        return list(dict.fromkeys([item for sublist in map(list, zip(*result)) for item in sublist]))#list of pathes sorted & merged with no duplicates
+        l = list(dict.fromkeys([item for sublist in map(list, zip(*result)) for item in sublist]))
+        if len(l)>0 :
+            print(l)
+            return l
+        else:
+            return "No match Found"
 
 class get_info(Resource):
     def post(self, List, img_ingex):
@@ -165,4 +198,18 @@ if __name__ == '__main__':
         print('************************************************')
     faceDetection = MTCNN()
     facenet_model = load_model('facenet_keras.h5')
-    app.run(host = '0.0.0.0' ,port=5021 ,debug=True)
+
+    generator = Generator()
+    discriminator = Discriminator()
+    generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+    discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+
+    checkpoint_dir = './training_checkpoints'
+    checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+    checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
+                                     discriminator_optimizer=discriminator_optimizer,
+                                     generator=generator,
+                                     discriminator=discriminator)
+
+    checkpoint.restore('./training_checkpoints/ckpt-6')
+    app.run(host = 'localhost' ,port=5021)

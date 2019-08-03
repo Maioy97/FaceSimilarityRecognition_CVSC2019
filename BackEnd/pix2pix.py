@@ -180,30 +180,10 @@ def generator_loss(disc_generated_output, gen_output, target):
   return total_gen_loss
   
   
-def generate_save_images(directory,model, test_input):
+def generate_save_images(filename,model, test_input):
   prediction = model(test_input, training=True)
   de_normalized = np.array((prediction[0] * 0.5 + 0.5) * 127.5)
   #plt.imsave(arr=de_normalized,fname=os.path.join(directory, "out" +'.jpg'),format='jpg')
-  cv2.imwrite("temp_out" +'.jpg', de_normalized)
+  cv2.imwrite(filename[:-4]+'.jpg' , de_normalized)
   plt.imshow(de_normalized)
 
-generator = Generator()
-discriminator = Discriminator()
-generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-
-checkpoint_dir = './training_checkpoints'
-checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
-                                 discriminator_optimizer=discriminator_optimizer,
-                                 generator=generator,
-                                 discriminator=discriminator)
-
-checkpoint.restore('./training_checkpoints/ckpt-6')
-
-test_dataset = tf.data.Dataset.list_files('temp/*.jpg')
-test_dataset = test_dataset.map(load_image_test)
-test_dataset = test_dataset.batch(1)
-
-for inp in test_dataset:
-  generate_save_images('temp',generator, inp)
